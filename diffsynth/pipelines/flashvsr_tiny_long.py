@@ -304,18 +304,20 @@ class FlashVSRTinyLongPipeline(BasePipeline):
         if_buffer=False,
         topk_ratio=2.0,
         kv_ratio=3.0,
-        local_range = 9,
-        color_fix = True,
+        local_range=9,
+        color_fix=True,
     ):
+        assert LQ_video is not None, "LQ_video is required"
+
         # 只接受 cfg=1.0（与原代码一致）
         assert cfg_scale == 1.0, "cfg_scale must be 1.0"
 
         # 要求：必须先 init_cross_kv()
         if self.prompt_emb_posi is None or 'context' not in self.prompt_emb_posi:
             raise RuntimeError(
-                "Cross-Attn KV 未初始化。请在调用 __call__ 前先执行：\n"
+                "Cross-Attn KV 未初始化。请在调用 __call__ 前先执行: \n"
                 "    pipe.init_cross_kv()\n"
-                "或传入自定义 context：\n"
+                "或传入自定义 context: \n"
                 "    pipe.init_cross_kv(context_tensor=your_context_tensor)"
             )
 
@@ -506,7 +508,7 @@ def model_fn_wan_video(
     t : torch.Tensor = None,
     local_range: int = 9,
     **kwargs,
-):
+) -> Tuple[torch.Tensor, list[torch.Tensor], list[torch.Tensor]]:
     # patchify
     x, (f, h, w) = dit.patchify(x)
 
@@ -560,7 +562,7 @@ def model_fn_wan_video(
                 is_stream=is_stream,
                 pre_cache_k=pre_cache_k[block_id] if pre_cache_k is not None else None,
                 pre_cache_v=pre_cache_v[block_id] if pre_cache_v is not None else None,
-                local_range = local_range,
+                local_range=local_range,
             )
             if pre_cache_k is not None: pre_cache_k[block_id] = last_pre_cache_k
             if pre_cache_v is not None: pre_cache_v[block_id] = last_pre_cache_v

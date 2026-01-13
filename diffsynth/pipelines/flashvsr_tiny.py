@@ -348,6 +348,10 @@ class FlashVSRTinyPipeline(BasePipeline):
         LQ_pre_idx = 0
         LQ_cur_idx = 0
 
+        event_s = torch.cuda.Event(enable_timing=True)
+        event_e = torch.cuda.Event(enable_timing=True)
+        event_s.record()
+
         with torch.no_grad():
             for cur_process_idx in tqdm(range(process_total_num)):
                 if cur_process_idx == 0:
@@ -428,6 +432,11 @@ class FlashVSRTinyPipeline(BasePipeline):
                     )
             except:
                 pass
+
+        event_e.record()
+        torch.cuda.synchronize()
+        print(f"Time taken: {event_s.elapsed_time(event_e)} ms to SR {num_frames} frames")
+        print(f"FPS: {num_frames / event_s.elapsed_time(event_e) * 1000}")
 
         return frames[0]
 
